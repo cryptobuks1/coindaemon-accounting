@@ -1,0 +1,19 @@
+{
+  "name": "bitcoin_accounts",
+  "version": "1.0.0",
+  "description": "Bitcoin accouting system, litecoin, dodge, etc...",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "account",
+    "bitcoin"
+  ],
+  "author": "Scott Lindh",
+  "license": "ISC",
+  "dependencies": {
+    "coind-client": "0.0.1",
+    "mongodb": "^3.0.10"
+  }
+}
