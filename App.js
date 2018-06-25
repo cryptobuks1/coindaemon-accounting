@@ -9,8 +9,8 @@ var coind = require('coind-client');
 const MongoClient = require('mongodb').MongoClient;
 const assert = require('assert');
 
-const url = '';
-const dbName = 'btcp-wallet-accounts';
+const url = 'mongodb://wallet:wall52r@ds117681.mlab.com:17681/btcp-accouting';
+const dbName = 'btcp-accouting';
 var dbCollection = "accounts";
 
 var coindaimon = new coind.Client({
@@ -31,22 +31,22 @@ coindaimon.cmd('getbalance',"", function(err, info) {
 */
 
 /*
-  createAccount("scott", function(d){
-      if(d.success){
+createAccount("test", function(d){
+    if(d.success){
         console.log(d.data);
-      }else{
+    }else{
         console.log(d.error);
-      }
-      
-  });
+    }
+ });
 */
+
 function createAccount(user, callback){
     //check if user exists
     MongoClient.connect(url, function(err, client) {        
         if(err){
             return callback({success:false, error:err})
         }else{
-            //console.log("Connected successfully to DB..");
+                //console.log("Connected successfully to DB..");
                 // Get the documents collection
                 const db = client.db(dbName);
                 const collection = db.collection(dbCollection);
@@ -59,14 +59,18 @@ function createAccount(user, callback){
 
                         try{
                             //console.log(docs);
+                            //console.log("trying to find account....");
+
                             docs.forEach(element => {
                                 if(element.user == user){
                                     //console.log("user found");  
                                     return callback({success:true, data:element});                                  
                                 }else{
-                                    
+                                    //console.log("nope");
                                 }
                             });
+                            //console.log("No account found....");
+                            throw Error('no account');
                         }catch(x){
                             //console.log(x);
                             //console.log("no user found");
@@ -119,13 +123,13 @@ function depositAddress(user, callback){
         if(d.success){
           return callback({success:true, address:d.data.address});
         }else{
-          return calback({success:false, data:d.error});
+          return callback({success:false, data:d.error});
         }        
     });
 }
 
 /*
-send("scott", "b1QLmk4giY7uBDsoKVneuoCiCLawWPtFsHS", 0.1, function(d){
+send("scott", "b1EaUGN5vcBzWmVLo35pNypP8bYWdZCXk1R", 0.1, function(d){
     if(d.success){
       console.log(d.tx);
     }else{
@@ -141,8 +145,29 @@ function send(user, address, amount, callback){ //send/withdraw
           if(d.balance > amount){
             //user has enough to send
             //send
+            coindaimon.cmd('sendtoaddress', address, amount, function(err, tx) {
+                if(err){
+                    //console.log(err);
+                    return callback({success:false, error:err});
+                }else{
+                    //console.log(info);
 
-            // /return callback({success:true, tx:tx});
+                    //Lets Mark account spent 
+                    addSpent(user, amount, function(d){
+                        if(d.success){
+                          //console.log(d.message);
+                          //SUCCESS RETURN TRANSACTION
+                          return callback({success:true, tx:tx});
+                        }else{
+                          console.log(d.error);
+                          return callback({success:false, error:d.error});
+
+                        }    
+                    });
+
+
+                }   
+              });
           }else{
             //user don't have enough coins to send
             return callback({success:false, error:"Not enough balance to send."});
@@ -155,7 +180,7 @@ function send(user, address, amount, callback){ //send/withdraw
 }
 
 
-balance("scott", function(d){
+balance("test", function(d){
     if(d.success){
       console.log(d.balance);
     }else{
@@ -167,7 +192,7 @@ function balance(user, callback){
     createAccount(user, function(d){
         if(d.success){
           // got spent in d.data.spent, lets get addressbalance now
-          coindaimon.cmd('getreceivedbyaddress', "b1QLmk4giY7uBDsoKVneuoCiCLawWPtFsHS", 4, function(err, bal) {
+          coindaimon.cmd('getreceivedbyaddress', d.data.address, 1, function(err, bal) {
             if(err){
                 //console.log(err);
                 return callback({success:false, error:err});
@@ -184,7 +209,7 @@ function balance(user, callback){
           //getreceivedbyaddress
           
         }else{
-          return calback({success:false, data:d.error});
+          return callback({success:false, data:d.error});
         }        
     });
 }
